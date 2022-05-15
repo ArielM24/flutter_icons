@@ -1,5 +1,6 @@
 import 'dart:io';
-
+import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -29,46 +30,48 @@ class _EditorPageState extends State<EditorPage> {
         title: Text(widget.iconName),
         backgroundColor: Colors.blue[900],
       ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.width,
-            child: Icon(
-              widget.iconData,
-              size: size,
-              color: color,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(
+              height: kIsWeb ? 500 : MediaQuery.of(context).size.width,
+              child: Icon(
+                widget.iconData,
+                size: size,
+                color: color,
+              ),
             ),
-          ),
-          Text("Tamaño ${size.toStringAsFixed(2)} px"),
-          Slider(
-            activeColor: Colors.blue[900],
-            value: size,
-            min: 1,
-            max: MediaQuery.of(context).size.width,
-            label: size.toStringAsFixed(2),
-            onChanged: (value) {
-              setState(() {
-                size = value;
-              });
-            },
-            divisions: 299,
-          ),
-          ListTile(
-            leading: Container(width: 30, height: 30, color: color),
-            title: ColorPickerInput(
-              color,
-              (Color c) {
+            Text("Tamaño ${size.toStringAsFixed(2)} px"),
+            Slider(
+              activeColor: Colors.blue[900],
+              value: size,
+              min: 1,
+              max: kIsWeb ? 500 : MediaQuery.of(context).size.width,
+              label: size.toStringAsFixed(2),
+              onChanged: (value) {
                 setState(() {
-                  color = c;
-                  pickerColor = c;
+                  size = value;
                 });
               },
+              divisions: 299,
             ),
-            trailing: IconButton(
-                onPressed: pickColor,
-                icon: Icon(Icons.color_lens, color: Colors.blue[900])),
-          ),
-        ],
+            ListTile(
+              leading: Container(width: 30, height: 30, color: color),
+              title: ColorPickerInput(
+                color,
+                (Color c) {
+                  setState(() {
+                    color = c;
+                    pickerColor = c;
+                  });
+                },
+              ),
+              trailing: IconButton(
+                  onPressed: pickColor,
+                  icon: Icon(Icons.color_lens, color: Colors.blue[900])),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: Row(
         mainAxisSize: MainAxisSize.min,
@@ -80,12 +83,13 @@ class _EditorPageState extends State<EditorPage> {
               onPressed: saveImage,
               child: const Icon(Icons.save_as)),
           const SizedBox(width: 20),
-          FloatingActionButton(
-              heroTag: "send",
-              tooltip: "Send icon as an image",
-              backgroundColor: Colors.blue[900],
-              onPressed: sendImage,
-              child: const Icon(Icons.send)),
+          if (!kIsWeb)
+            FloatingActionButton(
+                heroTag: "send",
+                tooltip: "Send icon as an image",
+                backgroundColor: Colors.blue[900],
+                onPressed: sendImage,
+                child: const Icon(Icons.send)),
         ],
       ),
     );
@@ -129,15 +133,40 @@ class _EditorPageState extends State<EditorPage> {
         ),
         size: Size(size, size));
     debugPrint("${byteData.lengthInBytes}");
-    debugPrint("${await getExternalStorageDirectories()}");
-    File f = File("/storage/emulated/0/FlutterIcons/${widget.iconName}.png");
-    await f.create(recursive: true);
-    await f.writeAsBytes(byteData.buffer.asUint8List());
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("Icon saved in ${f.path}"),
-      backgroundColor: Colors.blue[900],
-    ));
-    return f.path;
+    if (kIsWeb) {
+      downloadImage(byteData);
+      return "";
+    }
+
+    return await writeImage(byteData);
+  }
+
+  Future<String> writeImage(ByteData byteData) async {
+    if (!kIsWeb) {
+      debugPrint("${await getExternalStorageDirectories()}");
+      File f = File("/storage/emulated/0/FlutterIcons/${widget.iconName}.png");
+      await f.create(recursive: true);
+      await f.writeAsBytes(byteData.buffer.asUint8List());
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Icon saved in ${f.path}"),
+        backgroundColor: Colors.blue[900],
+      ));
+      return f.path;
+    }
+    return "";
+  }
+
+  downloadImage(ByteData byteData) async {
+    final blob = html.Blob([byteData.buffer.asUint8List()]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.document.createElement('a') as html.AnchorElement
+      ..href = url
+      ..style.display = "none"
+      ..download = "${widget.iconName}.png";
+    html.document.body?.children.add(anchor);
+    anchor.click();
+    html.document.body?.children.remove(anchor);
+    html.Url.revokeObjectUrl(url);
   }
 
   sendImage() async {

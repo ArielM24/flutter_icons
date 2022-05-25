@@ -20,8 +20,8 @@ class EditorPage extends StatefulWidget {
 }
 
 class _EditorPageState extends State<EditorPage> {
-  double size = 100;
-  Color color = Colors.blue;
+  double size = 700;
+  Color mainColor = const Color(0xFF0C439B);
   Color pickerColor = Colors.blue;
   @override
   Widget build(BuildContext context) {
@@ -31,66 +31,72 @@ class _EditorPageState extends State<EditorPage> {
         backgroundColor: Colors.blue[900],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(
-              height: kIsWeb ? 500 : MediaQuery.of(context).size.width,
-              child: Icon(
-                widget.iconData,
-                size: size,
-                color: color,
+        child: Row(children: [
+          SizedBox(
+            height: 700,
+            width: 700,
+            child: Icon(
+              widget.iconData,
+              size: size,
+              color: mainColor,
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 25.0),
+                child: Text("Tamaño ${size.toStringAsFixed(2)} px"),
               ),
-            ),
-            Text("Tamaño ${size.toStringAsFixed(2)} px"),
-            Slider(
-              activeColor: Colors.blue[900],
-              value: size,
-              min: 1,
-              max: kIsWeb ? 500 : MediaQuery.of(context).size.width,
-              label: size.toStringAsFixed(2),
-              onChanged: (value) {
-                setState(() {
-                  size = value;
-                });
-              },
-              divisions: 299,
-            ),
-            ListTile(
-              leading: Container(width: 30, height: 30, color: color),
-              title: ColorPickerInput(
-                color,
-                (Color c) {
-                  setState(() {
-                    color = c;
-                    pickerColor = c;
-                  });
-                },
+              SizedBox(
+                width: 400,
+                child: Slider(
+                  activeColor: Colors.blue[900],
+                  value: size,
+                  min: 1,
+                  max: 700,
+                  label: size.toStringAsFixed(2),
+                  onChanged: (value) {
+                    setState(() {
+                      size = value;
+                    });
+                  },
+                  divisions: 700,
+                ),
               ),
-              trailing: IconButton(
-                  onPressed: pickColor,
-                  icon: Icon(Icons.color_lens, color: Colors.blue[900])),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-              heroTag: "save",
-              tooltip: "Save icon as an image",
-              backgroundColor: Colors.blue[900],
-              onPressed: saveImage,
-              child: const Icon(Icons.save_as)),
-          const SizedBox(width: 20),
-          if (!kIsWeb)
-            FloatingActionButton(
-                heroTag: "send",
-                tooltip: "Send icon as an image",
-                backgroundColor: Colors.blue[900],
-                onPressed: sendImage,
-                child: const Icon(Icons.send)),
-        ],
+              Container(
+                width: 400,
+                padding: const EdgeInsets.only(left: 15),
+                child: Row(
+                  children: [
+                    IconButton(
+                        onPressed: pickColor,
+                        icon: Icon(Icons.color_lens, color: Colors.blue[900])),
+                    ColorPickerInput(
+                      mainColor,
+                      (Color c) {
+                        setState(() {
+                          mainColor = c;
+                          pickerColor = c;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.only(left: 22.0),
+                child: ElevatedButton.icon(
+                  onPressed: saveImage,
+                  icon: const Icon(Icons.save),
+                  label: const Text("Save"),
+                  style: ElevatedButton.styleFrom(primary: Colors.blue[900]),
+                ),
+              )
+            ],
+          ),
+        ]),
       ),
     );
   }
@@ -108,7 +114,7 @@ class _EditorPageState extends State<EditorPage> {
                     pickerColor: pickerColor,
                     onColorChanged: (Color c) {
                       setState(() {
-                        color = c;
+                        mainColor = c;
                         pickerColor = c;
                       });
                     },
@@ -128,7 +134,7 @@ class _EditorPageState extends State<EditorPage> {
           home: SizedBox(
             width: size,
             height: size,
-            child: Icon(widget.iconData, color: color, size: size),
+            child: Icon(widget.iconData, color: mainColor, size: size),
           ),
         ),
         size: Size(size, size));
